@@ -10,7 +10,7 @@ import { FieldsService } from '../services/fields';
 import { ItemsService } from '../services/items';
 import Keyv from 'keyv';
 import { AbstractServiceOptions, Collection, CollectionMeta, MutationOptions } from '../types';
-import { Accountability, FieldMeta, RawField, SchemaOverview } from '@directus/shared/types';
+import { Accountability, FieldMeta, Query, RawField, SchemaOverview } from '@directus/shared/types';
 import { Table } from 'knex-schema-inspector/dist/types/table';
 import { addFieldFlag } from '@directus/shared/utils';
 import { getHelpers, Helpers } from '../database/helpers';
@@ -193,7 +193,7 @@ export class CollectionsService {
 	/**
 	 * Read all collections. Currently doesn't support any query.
 	 */
-	async readByQuery(): Promise<Collection[]> {
+	async readByQuery(collection?: string): Promise<Collection[]> {
 		const collectionItemsService = new ItemsService('directus_collections', {
 			knex: this.knex,
 			schema: this.schema,
@@ -202,8 +202,11 @@ export class CollectionsService {
 
 		let tablesInDatabase = await this.schemaInspector.tableInfo();
 
+		const collectionFilterQuery: Query = collection ? { filter: { collection: { _eq: collection } } } : {};
+
 		let meta = (await collectionItemsService.readByQuery({
 			limit: -1,
+			...collectionFilterQuery,
 		})) as CollectionMeta[];
 
 		meta.push(...systemCollectionRows);
@@ -252,15 +255,17 @@ export class CollectionsService {
 			collections.push(collection);
 		}
 
-		for (const table of tablesInDatabase) {
-			const exists = !!collections.find(({ collection }) => collection === table.name);
+		if (!collection) {
+			for (const table of tablesInDatabase) {
+				const exists = !!collections.find(({ collection }) => collection === table.name);
 
-			if (!exists) {
-				collections.push({
-					collection: table.name,
-					schema: table,
-					meta: null,
-				});
+				if (!exists) {
+					collections.push({
+						collection: table.name,
+						schema: table,
+						meta: null,
+					});
+				}
 			}
 		}
 

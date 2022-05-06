@@ -7,18 +7,23 @@ import { Knex } from 'knex';
 import { omit } from 'lodash';
 import { SchemaOverview } from '@directus/shared/types';
 
-export async function getSnapshot(options?: { database?: Knex; schema?: SchemaOverview }): Promise<Snapshot> {
+export async function getSnapshot(options?: {
+	database?: Knex;
+	schema?: SchemaOverview;
+	collection?: string;
+}): Promise<Snapshot> {
 	const database = options?.database ?? getDatabase();
 	const schema = options?.schema ?? (await getSchema({ database }));
+	const collection = options?.collection;
 
 	const collectionsService = new CollectionsService({ knex: database, schema });
 	const fieldsService = new FieldsService({ knex: database, schema });
 	const relationsService = new RelationsService({ knex: database, schema });
 
 	const [collections, fields, relations] = await Promise.all([
-		collectionsService.readByQuery(),
-		fieldsService.readAll(),
-		relationsService.readAll(),
+		collectionsService.readByQuery(collection),
+		fieldsService.readAll(collection),
+		relationsService.readAll(collection),
 	]);
 
 	return {
