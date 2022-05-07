@@ -9,7 +9,7 @@ import { flushCaches } from '../../../cache';
 
 export async function snapshot(
 	snapshotPath: string,
-	options?: { yes: boolean; format: 'json' | 'yaml' }
+	options?: { yes: boolean; format: 'json' | 'yaml'; collection: string }
 ): Promise<void> {
 	const filename = path.resolve(process.cwd(), snapshotPath);
 
@@ -40,7 +40,7 @@ export async function snapshot(
 
 	const database = getDatabase();
 
-	const snapshot = await getSnapshot({ database });
+	const snapshot = await getSnapshot({ database, collection: options?.collection });
 
 	try {
 		if (options?.format === 'yaml') {
